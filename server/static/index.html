@@ -21,7 +21,27 @@
     <button class="tab-btn" data-tab="goals">Goals</button>
     <button class="tab-btn" data-tab="templates">Templates</button>
   </nav>
+  <div id="userInfo" class="user-info hidden">
+    <span id="usernameDisplay" class="username-chip"></span>
+    <button id="logoutBtn" class="btn-secondary">Log Out</button>
+  </div>
 </header>
+
+<!-- Auth overlay -->
+<div id="authOverlay" class="auth-overlay">
+  <div class="auth-card">
+    <div class="auth-brand">Fitness Tracker</div>
+    <h2 id="authTitle">Welcome back</h2>
+    <p id="authSubtitle" class="auth-subtitle">Sign in to your account</p>
+    <div id="authError" class="auth-error hidden"></div>
+    <form id="authForm">
+      <label>Username<input type="text" id="authUsername" autocomplete="username" placeholder="your username" required /></label>
+      <label>Password<input type="password" id="authPassword" autocomplete="current-password" placeholder="••••••••" required /></label>
+      <button type="submit" id="authSubmit">Sign In</button>
+    </form>
+    <p class="auth-toggle">Don't have an account? <button type="button" id="authToggle">Sign Up</button></p>
+  </div>
+</div>
 
 <main>
 

@@ -14,6 +14,13 @@ def get_db():
 def init_db():
     conn = get_db()
     conn.executescript('''
+        CREATE TABLE IF NOT EXISTS users (
+            id            INTEGER PRIMARY KEY AUTOINCREMENT,
+            username      TEXT UNIQUE NOT NULL,
+            password_hash TEXT NOT NULL,
+            created_at    TEXT DEFAULT (date('now'))
+        );
+
         CREATE TABLE IF NOT EXISTS exercises (
             id           INTEGER PRIMARY KEY AUTOINCREMENT,
             name         TEXT NOT NULL UNIQUE,
@@ -21,9 +28,10 @@ def init_db():
         );
 
         CREATE TABLE IF NOT EXISTS workouts (
-            id    INTEGER PRIMARY KEY AUTOINCREMENT,
-            date  TEXT NOT NULL,
-            notes TEXT NOT NULL DEFAULT ''
+            id      INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER REFERENCES users(id),
+            date    TEXT NOT NULL,
+            notes   TEXT NOT NULL DEFAULT ''
         );
 
         CREATE TABLE IF NOT EXISTS workout_sets (
@@ -37,13 +45,15 @@ def init_db():
 
         CREATE TABLE IF NOT EXISTS personal_records (
             id            INTEGER PRIMARY KEY AUTOINCREMENT,
-            exercise_id   INTEGER NOT NULL UNIQUE REFERENCES exercises(id),
+            user_id       INTEGER REFERENCES users(id),
+            exercise_id   INTEGER NOT NULL REFERENCES exercises(id),
             weight        REAL    NOT NULL,
             date_achieved TEXT    NOT NULL
         );
 
         CREATE TABLE IF NOT EXISTS goals (
             id         INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id    INTEGER REFERENCES users(id),
             type       TEXT    NOT NULL,
             target     INTEGER NOT NULL,
             start_date TEXT    NOT NULL,
@@ -53,15 +63,28 @@ def init_db():
 
         CREATE TABLE IF NOT EXISTS templates (
             id          INTEGER PRIMARY KEY AUTOINCREMENT,
-            name        TEXT NOT NULL UNIQUE,
+            user_id     INTEGER REFERENCES users(id),
+            name        TEXT NOT NULL,
             description TEXT NOT NULL DEFAULT '',
             exercises   TEXT NOT NULL
         );
     ''')
     conn.commit()
-
+    _migrate(conn)
     _seed_exercises(conn)
     conn.close()
+
+
+def _migrate(conn):
+    """Add user_id to tables created before auth was added."""
+    for table in ('workouts', 'goals', 'templates', 'personal_records'):
+        try:
+            conn.execute(
+                f'ALTER TABLE {table} ADD COLUMN user_id INTEGER REFERENCES users(id)'
+            )
+        except Exception:
+            pass
+    conn.commit()
 
 
 _DEFAULT_EXERCISES = [

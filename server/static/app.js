@@ -6,12 +6,94 @@ let muscleChart, freqChart, strengthChart;
 let allWorkouts = [];
 let pendingExerciseSelect = null;
 
+// ── Auth ───────────────────────────────────────────────────────
+
+async function checkAuth() {
+  const r = await fetch(`${API}/auth/me`);
+  if (r.status === 401) {
+    showAuthOverlay(false);
+    return false;
+  }
+  const user = await r.json();
+  document.getElementById('usernameDisplay').textContent = user.username;
+  document.getElementById('userInfo').classList.remove('hidden');
+  document.getElementById('authOverlay').classList.add('hidden');
+  return true;
+}
+
+function showAuthOverlay(isSignUp = false) {
+  document.getElementById('authOverlay').classList.remove('hidden');
+  setAuthMode(isSignUp);
+}
+
+let authMode = 'login';
+
+function setAuthMode(signUp) {
+  authMode = signUp ? 'signup' : 'login';
+  document.getElementById('authTitle').textContent    = signUp ? 'Create account' : 'Welcome back';
+  document.getElementById('authSubtitle').textContent = signUp ? 'Start tracking your fitness' : 'Sign in to your account';
+  document.getElementById('authSubmit').textContent   = signUp ? 'Sign Up' : 'Sign In';
+  document.getElementById('authToggle').textContent   = signUp ? 'Sign In' : 'Sign Up';
+  document.querySelector('.auth-toggle').firstChild.textContent = signUp
+    ? 'Already have an account? '
+    : "Don't have an account? ";
+  document.getElementById('authError').classList.add('hidden');
+  document.getElementById('authPassword').value = '';
+}
+
+document.getElementById('authToggle').addEventListener('click', () => {
+  setAuthMode(authMode === 'login');
+});
+
+document.getElementById('authForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const username = document.getElementById('authUsername').value.trim();
+  const password = document.getElementById('authPassword').value;
+  const errEl    = document.getElementById('authError');
+  errEl.classList.add('hidden');
+
+  const endpoint = authMode === 'signup' ? '/api/auth/signup' : '/api/auth/login';
+  const r = await fetch(endpoint, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username, password }),
+  });
+  const data = await r.json();
+
+  if (!r.ok) {
+    errEl.textContent = data.error;
+    errEl.classList.remove('hidden');
+    return;
+  }
+
+  document.getElementById('usernameDisplay').textContent = data.username;
+  document.getElementById('userInfo').classList.remove('hidden');
+  document.getElementById('authOverlay').classList.add('hidden');
+  loadApp();
+});
+
+document.getElementById('logoutBtn').addEventListener('click', async () => {
+  await fetch('/api/auth/logout', { method: 'POST' });
+  document.getElementById('userInfo').classList.add('hidden');
+  showAuthOverlay(false);
+  // Reset app state
+  allWorkouts = [];
+  exercises = [];
+  templates = [];
+});
+
 // ── Boot ───────────────────────────────────────────────────────
 
 async function init() {
+  const authed = await checkAuth();
+  if (authed) loadApp();
+}
+
+async function loadApp() {
   await Promise.all([fetchExercises(), fetchTemplates()]);
   setDefaultDates();
-  addSetRow(document.getElementById('setsContainer'));
+  const container = document.getElementById('setsContainer');
+  if (!container.children.length) addSetRow(container);
   setupTabs();
   setupForms();
   loadDashboard();
