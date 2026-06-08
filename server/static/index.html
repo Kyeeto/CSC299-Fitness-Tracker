@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fitness Tracker</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<header>
+  <h1>Fitness Tracker</h1>
+  <nav>
+    <button class="tab-btn active" data-tab="dashboard">Dashboard</button>
+    <button class="tab-btn" data-tab="log">Log Workout</button>
+    <button class="tab-btn" data-tab="history">History</button>
+    <button class="tab-btn" data-tab="records">Records</button>
+    <button class="tab-btn" data-tab="goals">Goals</button>
+    <button class="tab-btn" data-tab="templates">Templates</button>
+  </nav>
+</header>
+
+<main>
+
+  <!-- Dashboard -->
+  <section id="tab-dashboard" class="tab-content active">
+    <div id="alerts-container"></div>
+
+    <div class="stats-bar">
+      <div class="stat-card">
+        <div class="stat-value" id="stat-total-workouts">—</div>
+        <div class="stat-label">Total Workouts</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="stat-this-week">—</div>
+        <div class="stat-label">This Week</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="stat-records">—</div>
+        <div class="stat-label">Personal Records</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="stat-last-workout">—</div>
+        <div class="stat-label">Last Workout</div>
+      </div>
+    </div>
+
+    <div class="charts-grid">
+      <div class="chart-card">
+        <h2>Muscle Groups <span class="chart-hint">sets logged per group</span></h2>
+        <canvas id="muscleChart"></canvas>
+      </div>
+      <div class="chart-card">
+        <h2>Weekly Frequency <span class="chart-hint">last 8 weeks</span></h2>
+        <canvas id="frequencyChart"></canvas>
+      </div>
+      <div class="chart-card full-width">
+        <h2>Strength Progress <span class="chart-hint">max weight per session</span></h2>
+        <div class="exercise-selector">
+          <select id="strengthExercise">
+            <option value="">Select an exercise to chart...</option>
+          </select>
+        </div>
+        <canvas id="strengthChart"></canvas>
+        <p id="strengthEmpty" class="chart-empty hidden">No data yet for this exercise. Log a workout to see progress.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Log Workout -->
+  <section id="tab-log" class="tab-content">
+    <h2>Log Workout</h2>
+    <div class="template-load">
+      <select id="templateSelect"><option value="">Load from template...</option></select>
+      <button id="loadTemplateBtn">Load</button>
+    </div>
+    <form id="workoutForm">
+      <div class="form-row">
+        <label>Date<input type="date" id="workoutDate" required /></label>
+        <label>Notes<input type="text" id="workoutNotes" placeholder="Optional notes..." /></label>
+      </div>
+      <div id="setsContainer"></div>
+      <div class="form-actions">
+        <button type="button" id="addSetBtn">+ Add Exercise</button>
+        <button type="submit">Save Workout</button>
+      </div>
+    </form>
+    <div id="prAlert" class="pr-alert hidden"></div>
+  </section>
+
+  <!-- History -->
+  <section id="tab-history" class="tab-content">
+    <h2>Workout History</h2>
+    <div class="filter-row">
+      <input type="text" id="historyFilter" placeholder="Filter by date, exercise, or notes..." />
+      <a href="/api/export/csv" class="btn-secondary">Export CSV</a>
+    </div>
+    <div id="historyList"></div>
+  </section>
+
+  <!-- Records -->
+  <section id="tab-records" class="tab-content">
+    <h2>Personal Records</h2>
+    <div id="recordsList"></div>
+  </section>
+
+  <!-- Goals -->
+  <section id="tab-goals" class="tab-content">
+    <h2>Goals</h2>
+    <form id="goalForm">
+      <div class="form-row">
+        <label>Type
+          <select id="goalType"><option value="frequency">Weekly frequency</option></select>
+        </label>
+        <label>Workouts / week<input type="number" id="goalTarget" min="1" max="14" required /></label>
+        <label>Start<input type="date" id="goalStart" required /></label>
+        <label>End<input type="date" id="goalEnd" required /></label>
+      </div>
+      <button type="submit">Add Goal</button>
+    </form>
+    <div id="goalsList" style="margin-top:1.5rem"></div>
+  </section>
+
+  <!-- Templates -->
+  <section id="tab-templates" class="tab-content">
+    <h2>Workout Templates</h2>
+    <form id="templateForm">
+      <div class="form-row">
+        <label>Template Name<input type="text" id="templateName" required placeholder="e.g. Push Day" /></label>
+        <label>Description<input type="text" id="templateDesc" placeholder="Optional..." /></label>
+      </div>
+      <div id="templateSetsContainer"></div>
+      <div class="form-actions">
+        <button type="button" id="addTemplateSetBtn">+ Add Exercise</button>
+        <button type="submit">Save Template</button>
+      </div>
+    </form>
+    <div id="templatesList" style="margin-top:1.5rem"></div>
+  </section>
+
+</main>
+
+<!-- New Exercise Modal -->
+<div id="exerciseModal" class="modal hidden">
+  <div class="modal-content">
+    <h3>Add New Exercise</h3>
+    <form id="exerciseForm">
+      <label>Name<input type="text" id="exerciseName" required /></label>
+      <label>Muscle Group
+        <select id="exerciseMuscleGroup">
+          <option>Chest</option><option>Back</option><option>Shoulders</option>
+          <option>Biceps</option><option>Triceps</option><option>Legs</option>
+          <option>Core</option><option>Cardio</option><option>Full Body</option>
+        </select>
+      </label>
+      <div class="modal-actions">
+        <button type="submit">Add Exercise</button>
+        <button type="button" id="closeModal">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
